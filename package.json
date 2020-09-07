@@ -1,0 +1,20 @@
+{
+  "name": "airapp",
+  "version": "1.0.0",
+  "description": "Simple air quality data relay",
+  "main": "app.js",
+  "dependencies": {
+    "ejs": "^3.1.5",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
+  "scripts": {
+    "start": "nodemon -e js,ejs"
+  },
+  "author": "Benjamin Shepherd",
+  "license": "ISC"
+}

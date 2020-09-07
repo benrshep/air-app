@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang=en>
+<head>
+    <meta charset=utf-8/>
+    <title>513 Brookline</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css" />
+</head>
+<script type='text/javascript'>
+    p = 'http://192.168.86.34/json?live=true';
+    issc = false;
+    burl = 'https://www.purpleair.com/';
+    window.addEventListener('resize', rs);
+    function rs(event) {
+        f = ge('ftr');
+        if (f) {
+            document.body.style.marginBottom = f.offsetHeight + 'px';
+        }
+    }
+    cc = [0, 165, 0];
+    grey = 'rgb(165,165,165)';
+    ccm = '';
+    msm = 'Connecting...';
+    es = 'Unknown State';
+    em = 'Error connecting.';
+    wfr = 'Waiting...';
+    wls = 'Querying State';
+    lg = '';
+    msmd = '<div class=\'msm sm\'>';
+    cd = '</div>';
+    tc = 'Checking status: Takes a minute or two.';
+    wnc = 'If WiFi cannot connect, verify WiFi settings.';
+    wnconf = 'Please configure WiFi.';
+    isc = false;
+    isconf = false;
+    rl = 'reglink';
+    if (window.location.pathname == '/config')
+        history.replaceState({}, document.title, window.location.pathname);
+    myVar = setTimeout(update, 100);
+    function setm(m, c) {
+        el = ge('ms');
+        if (el) {
+            el.innerHTML = wls + msmd + m + cd;
+            if (c)
+                setc(el, c);
+        } else {}
+    }
+    function setc(el, c) {
+        if (el && el.style) {
+            el.style.backgroundColor = c;
+            el.style.color = gtc(c);
+        }
+    }
+    function ge(id) {
+        return document.getElementById(id);
+    }
+    function fjf(p, cb) {
+        hr = new XMLHttpRequest();
+        hr.onerror = function(e) {
+            wls = es;
+            setm(em, grey);
+        };
+        hr.onreadystatechange = function() {
+            if (hr.readyState === 4) {
+                if (hr.status === 200) {
+                    d = JSON.parse(hr.responseText);
+                    if (cb)
+                        cb(d);
+                }
+            }
+        };
+        hr.open('GET', p);
+        hr.send();
+    }
+    function gtc(bgc) {
+        rc = bgc.substring(bgc.indexOf('(') + 1, bgc.length - 1).split(',');
+        b = ((rc[0] * 299) + (rc[1] * 587) + (rc[2] * 114)) / 1000;
+        if (b < 123) {
+            return '#fff';
+        } else {
+            return 'black';
+        }
+    }
+    function getLink() {
+        if (lat == undefined || lon == undefined)
+            return burl + 'map?mylocation';
+        else
+            return burl + 'map?zoom=12&lat=' + lat + '&lng=' + lon;
+    }
+    function update() {
+        fjf(p, function(d) {
+            cc = [0, 165, 0];
+            ccm = '';
+            msm = lg;
+            wls = '';
+            for (var el in d) {
+                if (el == 'wlstate') {
+                    if (d[el] == 'Connected') {
+                        isc = true;
+                        isconf = true;
+                    } else
+                        isc = false;
+                    if (d[el] == 'Not Configured')
+                        isconf = false;
+                    wls = 'WiFi ' + d[el];
+                } else if (el == 'lat') {
+                    lat = d[el];
+                } else if (el == 'lon') {
+                    lon = d[el];
+                } else {
+                    set(el, d[el]);
+                }
+            }
+            if (isc) {
+                setm(msm, 'rgb(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ')');
+                el1 = ge('maplink');
+                if (el1)
+                    el1.href = getLink();
+            } else if (!isconf) {
+                setm(wnconf, grey);
+            } else {
+                setm(wnc, 'rgb(255,0,0)');
+            }
+        });
+        myVar = setTimeout(update, 10000);
+    }
+    function set(e, v) {
+        el = ge(e);
+        if (el) {
+            if (e == 'rssi') {
+                el.className = g(v);
+            } else if (e.indexOf('status_') == 0) {
+                c = 'rgb(150,150,150)';
+                if (v == 0) {
+                    if (e != 'status_2' && cc[0] != 255 && isconf) {
+                        cc[0] = 165;
+                        cc[1] = 165;
+                        cc[2] = 165;
+                        ccm = wfr;
+                        msm = tc;
+                    }
+                }
+                if (v == 1) {
+                    c = 'rgb(255,165,0)';
+                }
+                if (v == 2) {
+                    c = 'rgb(0,165,0)';
+                }
+                if (v == 3) {
+                    c = 'rgb(255,0,0)';
+                    if (e != 'status_2' && isconf) {
+                        cc[0] = 255;
+                        cc[1] = 165;
+                        cc[2] = 0;
+                        ccm = wfr;
+                        msm = tc;
+                    }
+                }
+                setc(el, c);
+            } else if (e.indexOf('p25aqic') > -1) {
+                setc(el, v);
+            } else if (e.indexOf('version') > -1) {
+                el.innerHTML = v;
+            } else {
+                if (v == 'nan') {
+                    el.innerHTML = '---';
+                } else if (!isNaN(v)) {
+                    if (e.indexOf('aqi') > 0) {
+                        len = 0;
+                    } else {
+                        len = 2;
+                    }
+                    el.innerHTML = v.toFixed(len);
+                } else {
+                    el.innerHTML = v;
+                }
+            }
+        }
+    }
+    function g(r) {
+        rr = 'bd on';
+        if (r >= 0) {} else if (r >= -50) {
+            rr = 'gd fi';
+        } else if (r >= -60) {
+            rr = 'gd fo';
+        } else if (r >= -70) {
+            rr = 'ok th';
+        } else if (r >= -80) {
+            rr = 'bd tw';
+        }
+        return 'si sbmed ' + rr;
+    }
+</script>
+
+<body>
+    <header>
+      <h1 class="heading">513 Brookline <br /></h1>
+    </header>
+    <main>
+      <section class="cards">
+        <article>
+          <h1 class="article-title">
+            AQI (Ch A)
+          </h1>
+          <p title='' class='article-text' id='pm2.5_aqi'>
+            --
+          </p>
+          <p class='data-description'>
+            Ch A PM2.5 AQI
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            AQI (Ch B)
+          </h1>
+          <p title='' class='article-text' id='pm2.5_aqi_b'>--</p>
+          <p class='data-description'>
+            Ch B PM2.5 AQI
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            Temp (&#176;F)
+          </h1>
+          <p title='' class='article-text' id='current_temp_f'>
+            --
+          </p>
+          <p class='data-description'>
+            Sensor: BME280
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            Relative Humidity
+          </h1>
+          <p title='' class='article-text' id='current_humidity'>
+            --
+          </p>
+          <p class='data-description'>
+            Sensor: BME280
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            Current Dewpoint (&#176;F)
+          </h1>
+          <p title='' class='article-text' id='current_dewpoint_f'>
+            --
+          </p>
+          <p class='data-description'>
+            Sensor: BME280
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            Pressure
+          </h1>
+          <p title='' class='article-text' id='pressure'>
+            --
+          </p>
+          <p class='data-description'>
+            hPa
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            ADC
+          </h1>
+          <p title='' class='article-text' id='Adc'>
+            --
+          </p>
+          <p class='data-description'>
+            (V)
+          </p>
+        </article>
+        <article>
+          <h1 class="article-title">
+            Wifi
+          </h1>
+          <p title='' class='article-text' id='ssid'>
+            --
+          </p>
+          <p title='' class='data-description' 
+            id='ms'>
+            Loading...
+          </p>    
+        </article>
+      </section>
+    </main>
+  </body>
+        <div class=sl>   
+           <table>
+                <tr class=b>     
+                </tr>
+                <tr class='b m tc'>
+                    <td colspan=2>PM1.0 (&#181;g/m3)</td>
+                    <td colspan=2>PM2.5 (&#181;g/m3)</td>
+                    <td colspan=2>PM10 (&#181;g/m3)</td>
+                </tr>
+                <tr class='b l tc'>
+                    <td colspan=2>
+                        <span title='' class='' id='pm1_0_atm'>-.--</span>
+                        <br>
+                        <span title='' class='' id='pm1_0_atm_b'>-.--</span>
+                    </td>
+                    <td colspan=2>
+                        <span title='' class='' id='pm2_5_atm'>-.--</span>
+                        <br>
+                        <span title='' class='' id='pm2_5_atm_b'>-.--</span>
+                    </td>
+                    <td colspan=2>
+                        <span title='' class='' id='pm10_0_atm'>-.--</span>
+                        <br>
+                        <span title='' class='' id='pm10_0_atm_b'>-.--</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan=6>
+                        <b>Particles/deciliter</b>
+                        <table width=100%>
+                            <tr class='b s'>
+                                <td>&gt;=0.3&#181;m</td>
+                                <td>&gt;=0.5&#181;m</td>
+                                <td>&gt;=1.0&#181;m</td>
+                                <td>&gt;=2.5&#181;m</td>
+                                <td>&gt;=5.0&#181;m</td>
+                                <td>&gt;=10&#181;m</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span title='' class='' id='p_0_3_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_0_3_um_b'>-.--</span>
+                                </td>
+                                <td>
+                                    <span title='' class='' id='p_0_5_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_0_5_um_b'>-.--</span>
+                                </td>
+                                <td>
+                                    <span title='' class='' id='p_1_0_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_1_0_um_b'>-.--</span>
+                                </td>
+                                <td>
+                                    <span title='' class='' id='p_2_5_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_2_5_um_b'>-.--</span>
+                                </td>
+                                <td>
+                                    <span title='' class='' id='p_5_0_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_5_0_um_b'>-.--</span>
+                                </td>
+                                <td>
+                                    <span title='' class='' id='p_10_0_um'>-.--</span>
+                                    <br>
+                                    <span title='' class='' id='p_10_0_um_b'>-.--</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                
+            </table>
+        </div>
+        <div class='pac b s sm' id=ftr>
+            <span>
+                <span style='background-color:silver'>
+                    <span title='pool.ntp.org' class='si s n' id='status_0'>NTP</span>
+                    <span title='www.googleapis.com' class='si s n' id='status_1'>LOC</span>
+                    <span title='update.purpleair.com' class='si s n' id='status_2'>UPD</span>
+                    <span title='www.purpleair.com' class='si s n' id='status_3'>PAA</span>
+                    <span title='api.thingspeak.com' class='si s n' id='status_4'>TSA</span>
+                    <span title='api.thingspeak.com' class='si s n' id='status_5'>TSS</span>
+                    <span title='http://sensors-ingest.wunderground.com/v1/pws/data/LCAMILLV25' class='si s n' id='status_6'>3RD</span>
+                    <span title='api.thingspeak.com' class='si s n' id='status_8'>TSB</span>
+                    <span title='api.thingspeak.com' class='si s n' id='status_9'>TSS</span>
+                    <span title='' class='si s n' id='status_10'>3RD</span>
+                </span>
+            </span>
+            <br>
+            V
+            <span title='' class='' id='version'>6.01</span>
+            <span title='' class='b s' id='hardwarediscovered'></span>
+        </div>
+    </div>
+    <script>
+    rs();
+    </script>
+</body>
+</html>
+
